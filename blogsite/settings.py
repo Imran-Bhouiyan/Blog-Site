@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'corsheaders',
    #site Apps
     'user_auth',
+    'core',
 ]
 
 MIDDLEWARE = [

@@ -9,10 +9,7 @@ import jwt
 from rest_framework import exceptions
 from django.conf import settings
 from rest_framework import permissions
-import requests
 import random
-import datetime
-import string
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from django.utils import timezone
