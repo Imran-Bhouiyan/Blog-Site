@@ -39,8 +39,8 @@ class JWTAuthentication(BaseAuthentication):
                 raise exceptions.AuthenticationFailed("User Not Found")
             if not user.is_active:
                 raise exceptions.AuthenticationFailed("User is deactive")
-            if not user.is_verified:
-                raise exceptions.AuthenticationFailed("User is not verified yet!")
+            # if not user.is_verified:
+            #     raise exceptions.AuthenticationFailed("User is not verified yet!")
             
 
             # self.enforce_csrf(request)

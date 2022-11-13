@@ -3,10 +3,9 @@ from user_auth . models import User
 
 class Connections(models.Model):
     user = models.ForeignKey(User , on_delete = models.CASCADE)
-    follows = models.ManyToManyField(
-        "self",
+    follows = models.ForeignKey( User,
+        on_delete=models.CASCADE,
         related_name="followed_by",
-        symmetrical=False,
         blank=True
     )
     is_connected = models.BooleanField(default = False)
@@ -28,3 +27,8 @@ class Like(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(Post , on_delete=models.CASCADE)
     content = models.TextField(default = "" , null=True,blank=True)
+
+
+
+
+    

@@ -27,7 +27,7 @@ class PostSerializers(serializers.ModelSerializer):
     
             
            
-    def get_like(self,instance):
+    def get_comments(self,instance):
         try:
             post_id = instance.id
             queryset = Comment.objects.filter(post__id = post_id).order_by("-id")
@@ -42,4 +42,17 @@ class PostSerializers(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment 
+        fields = "__all__"
+
+class ConnectionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Connections 
+        fields = "__all__"
+
+
+
+
+class LikeSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Like 
         fields = "__all__"

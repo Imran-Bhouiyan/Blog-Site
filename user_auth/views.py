@@ -152,41 +152,11 @@ def send_verify_code(request):
         )
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def verify_user(request):
-    try:
-        email = request.data["email"]
-        code = request.data["verification_code"]
-        user_query = User.objects.filter(email=email).last()
-        verification_code_query = VerifyCode.objects.filter(email=email).last()
-        if user_query:
-            if user_query.email == email and int(code) == verification_code_query.code :
-                user_query.is_verified = True
-                user_query.save()
-                verification_code_query.delete()
-                return JsonResponse({"status":status.HTTP_200_OK , "msg":"user verify successfully"})
-                
-            else:
-                return JsonResponse(
-                    {
-                        "status": status.HTTP_400_BAD_REQUEST,
-                        "msg": "verification code not matched!",
-                    }
-                )
-        else:
-            return JsonResponse(
-                {"status": status.HTTP_404_NOT_FOUND, "msg": "User not Found!"}
-            )
-    except Exception as e:
-        return JsonResponse(
-            {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "msg": e.args[0]}
-        )
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def login(request):
+def login_otp_send(request):
     email = request.data["email"]
     password = request.data["password"]
     response = Response()
@@ -198,9 +168,43 @@ def login(request):
     if not user_info.check_password(password):
         raise exceptions.AuthenticationFailed("Wrong Password")
     serializers_data = AuthUserSerializers(user_info)
+    range_start = 10 ** (6 - 1)
+    range_end = (10 ** 6) - 1
+    verify_code = random.randint(range_start, range_end)
+    create_OTP = VerifyCode.objects.create(
+        user=user_info, code=verify_code, email=email
+    )
+    create_OTP.save()
+    return JsonResponse(
+        {
+            "status": status.HTTP_200_OK,
+            "msg": "An OTP send to your email. Use this otp for login"
+          
+        }
+    )
+   
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login(request):
+    email = request.data["email"]
+    code = request.data["otp"]
+    response = Response()
+    if (email is None) or (code is None):
+        raise exceptions.AuthenticationFailed("email and otp are required")
+    user_info = User.objects.filter(email=email).last()
+    verify_code =VerifyCode.objects.filter(email=email, code = code , is_expired = False).last()
+    if user_info is None:
+        raise exceptions.AuthenticationFailed("User not found")
+
+    if not verify_code:
+        raise exceptions.AuthenticationFailed("Wrong otp")
+    serializers_data = AuthUserSerializers(user_info)
     access_token = genarate_access_token(user_info)
     refresh_token = genarate_refresh_token(user_info)
     response.set_cookie(key="refreshtoken", value=refresh_token, httponly=True)
+    verify_code.is_expired=True 
+    verify_code.save()
     return JsonResponse(
         {
             "status": status.HTTP_200_OK,
@@ -211,4 +215,39 @@ def login(request):
     )
 
 
+class Logout(APIView):
+    def get(self,request):
+        authorization_header = request.headers.get('Authorization')
+        if not authorization_header:
+            return JsonResponse(
+                {"status": status.HTTP_400_BAD_REQUEST}
+            )
+        try:
+            access_token = authorization_header.split(' ')[1]
+            query = TokenRecord.objects.filter(token = access_token).last()
+            if not query:
+                create_record = TokenRecord.objects.create(
+                    token =access_token
+                )
+                create_record.save()
+                return JsonResponse(
+                    {
+                        "status": status.HTTP_200_OK,
+                        "msg": "You are successfully signout"
+                    
+                    }
+                        )
+            else:
+                return JsonResponse(
+                {
+                    "status": status.HTTP_200_OK,
+                    "msg": "You already signout"
+                
+                }
+                    )
+
+        except Exception as e:
+            return JsonResponse(
+                {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "msg": e.args[0]}
+            )
 
